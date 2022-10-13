@@ -13,7 +13,7 @@ namespace Dot.Net.WebApi.Domain
         public double Bid { get; set; }
         public double Ask { get; set; }
         public string Benchmark { get; set; }
-        public DateTime BidListDate { get; set; }
+        public  DateTime BidListDate { get; set; }
         public string Commentary { get; set; }
         public string Security { get; set; }
         public string Status { get; set; }
