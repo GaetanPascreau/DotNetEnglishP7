@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
  
 namespace Dot.Net.WebApi.Controllers
 {
+    [ApiController]
     [Route("[controller]")]
     public class RuleNameController : Controller
     {
