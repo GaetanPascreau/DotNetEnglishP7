@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace WebApi.Domain
 {
-    public class BidListDTO
+    public class CurvePointtDTO
     {
         public int BidListId { get; set; }
 
@@ -13,6 +13,9 @@ namespace WebApi.Domain
         [Required(ErrorMessage = "Type is mandatory")]
         public string Type { get; set; }
 
-        public double BidQuantity { get; set; }
+        public decimal BidQuantity { get; set; }
+        public DateTime BidListDate { get; set; }
+        public DateTime CreationDate { get; set; }
+        public DateTime RevisionDate { get; set; }
     }
 }

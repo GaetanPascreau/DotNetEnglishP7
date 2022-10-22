@@ -14,7 +14,7 @@ namespace Dot.Net.WebApi.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<BidList> BidList { get; set; }
-        public DbSet<CurvePoint> CurevPoint { get; set; }
+        public DbSet<CurvePoint> CurvePoint { get; set; }
         public DbSet<Rating> Rating { get; set; }
         public DbSet<RuleName> RuleName { get; set; }
         public DbSet<Trade> Trade { get; set; }

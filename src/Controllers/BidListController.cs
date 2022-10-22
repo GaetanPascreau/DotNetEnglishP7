@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,34 +24,33 @@ namespace Dot.Net.WebApi.Controllers
             _logger = logger;
             _context = context;
         }
+
         //[HttpGet("/")]
         //public IActionResult Home()
         //{
         //    return View("Home");
         //}
 
-        //// GET /bidList/list
-        //[HttpGet("/bidList/list")]
-        //public IQueryable<BidList> GetBidList()
-        //{
-        //    var bids = from b in _context.BidList
-        //               select new BidList()
-        //               {
-        //                   BidListId = b.BidListId,
-        //                   Account = b.Account,
-        //                   Type = b.Type,
-        //                   BidQuantity = b.BidQuantity
-        //               };
-
-        //    return bids;
-        //}
-
         // GET: /BidList
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<BidListDTO>>> GetBidList()
+        [HttpGet("/BidList")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<IEnumerable<CurvePointtDTO>>> GetBidList()
         {
             return await _context.BidList
-                .Select(x => ItemToDTO(x))
+                .Select(x => BidListToDTO(x))
+                .ToListAsync();
+        }
+
+        //GET: /BidList/id
+       [HttpGet("/BidList/{id}")]
+       [ProducesResponseType(StatusCodes.Status200OK)]
+       [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<IEnumerable<CurvePointtDTO>>> GetBidListById(int id)
+        {
+            return await _context.BidList
+                .Where(x => x.BidListId == id)
+                .Select(x => BidListToDTO(x))
                 .ToListAsync();
         }
 
@@ -58,13 +58,22 @@ namespace Dot.Net.WebApi.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<BidListDTO>> CreateBidList(BidListDTO bidListDTO)
+        public async Task<ActionResult<CurvePointtDTO>> CreateBidList(CurvePointtDTO bidListDTO)
         {
+            // ADD FIELDS VALIDATION
+            //if (bidListDTO.BidQuantity.GetType() != Decimal)
+            //{
+            //    return BadRequest();
+            //}
+
             var bidList = new BidList
             {
                 Account = bidListDTO.Account,
                 Type = bidListDTO.Type,
-                BidQuantity = bidListDTO.BidQuantity
+                BidQuantity = bidListDTO.BidQuantity,
+                BidListDate = DateTime.Now,
+                CreationDate = DateTime.Now,
+                RevisionDate = DateTime.Now
             };
 
             _context.BidList.Add(bidList);
@@ -73,11 +82,11 @@ namespace Dot.Net.WebApi.Controllers
             return CreatedAtAction(
                 nameof(GetBidList),
                 new { id = bidList.BidListId },
-                ItemToDTO(bidList));
+                BidListToDTO(bidList));
         }
 
 
-
+        // why is it outside of the Create method ? => move it to CreateBidList ?
         [HttpGet("/bidList/validate")]
         public IActionResult Validate([FromBody]BidList bidList)
         {
@@ -91,26 +100,86 @@ namespace Dot.Net.WebApi.Controllers
             return View("bidList/update");
         }
 
-        [HttpPost("/bidList/update/{id}")]
-        public IActionResult UpdateBid(int id, [FromBody] BidList bidList)
+        ////Original method (duplicated and modified below)
+        //[HttpPost("/bidList/update/{id}")]
+        //public IActionResult UpdateBid(int id, [FromBody] BidList bidList)
+        //{
+        //    // TODO: check required fields, if valid call service to update Bid and return list Bid
+        //    return Redirect("/bidList/list");
+        //}
+
+        //PUT /BidList/id
+        [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdateBidList(int Id, BidList bidList)
         {
-            // TODO: check required fields, if valid call service to update Bid and return list Bid
-            return Redirect("/bidList/list");
+            if(Id != bidList.BidListId)
+            {
+                return BadRequest();
+            }
+     
+            //bidList.BidListDate = _context.BidList.Find(Id).BidListDate;
+            //bidList.CreationDate = _context.BidList.Find(Id).CreationDate;
+            //bidList.RevisionDate = _context.BidList.Find(Id).RevisionDate;
+            _context.Entry(bidList).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if(!BidListExists(Id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }  
+            }
+            return NoContent();
         }
 
-        [HttpDelete("/bidList/{id}")]
-        public IActionResult DeleteBid(int id)
+        ////Original method (duplicated and modified below)
+        //[HttpDelete("/bidList/{id}")]
+        //public IActionResult DeleteBid(int id)
+        //{
+        //    return Redirect("/bidList/list");
+        //}
+
+        //DELETE /BidList/id
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<BidList>> DeleteBidList(int id)
         {
-            return Redirect("/bidList/list");
+            var bidList = await _context.BidList.FindAsync(id);
+            if (bidList == null)
+            {
+                return NotFound();
+            }
+            _context.BidList.Remove(bidList);
+            await _context.SaveChangesAsync();
+            return bidList;
         }
 
-        private static BidListDTO ItemToDTO(BidList bidList) =>
-        new BidListDTO
+        private bool BidListExists(int id)
+        {
+            return _context.BidList.Any(e => e.BidListId == id);
+        }
+
+        private static CurvePointtDTO BidListToDTO(BidList bidList) =>
+        new CurvePointtDTO
         {
             BidListId = bidList.BidListId,
             Account = bidList.Account,
             Type = bidList.Type,
-            BidQuantity = bidList.BidQuantity
+            BidQuantity = bidList.BidQuantity,
+            BidListDate = bidList.BidListDate,
+            CreationDate = bidList.CreationDate,
+            RevisionDate = bidList.RevisionDate
         };
     }
 }
