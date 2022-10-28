@@ -7,10 +7,10 @@ namespace Dot.Net.WebApi.Domain
         public int TradeId { get; set; }
         public string Account { get; set; }
         public string Type { get; set; }
-        public double BuyQuantity { get; set; }
-        public double SellQuantity { get; set; }
-        public double BuyPrice { get; set; }
-        public double SellPrice { get; set; }
+        public decimal? BuyQuantity { get; set; }
+        public decimal? SellQuantity { get; set; }
+        public decimal? BuyPrice { get; set; }
+        public decimal? SellPrice { get; set; }
         public DateTime TradeDate { get; set; }
         public string Security { get; set; }
         public string Status { get; set; }

@@ -16,16 +16,15 @@ namespace Dot.Net.WebApi.Controllers
     [Route("CurvePoint")]
     public class CurveController : Controller
     {
-        private readonly ILogger<BidListController> _logger;
+        // TODO: Inject Curve Point service
+        private readonly ILogger<CurveController> _logger;
         private readonly LocalDbContext _context;
-
-        public CurveController(ILogger<BidListController> logger, LocalDbContext context)
+ 
+        public CurveController(ILogger<CurveController> logger, LocalDbContext context)
         {
             _logger = logger;
             _context = context;
         }
-
-        // TODO: Inject Curve Point service
 
         //[HttpGet("/curvePoint/list")]
         //public IActionResult Home()
@@ -33,31 +32,31 @@ namespace Dot.Net.WebApi.Controllers
         //    return View("curvePoint/list");
         //}
 
-        // GET: /CurvePoint
-        [HttpGet("/CurvePoint")]
+        // GET: /curvePoint/list
+        [HttpGet("/curvePoint/list")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<CurvePointDTO>>> GetCurvePoint()
         {
+            _logger.LogInformation("User requested the list of curvePoints");
             return await _context.CurvePoint
                 .Select(x => CurvePointToDTO(x))
                 .ToListAsync();
         }
 
-        //GET: /CurvePoint/id
-        [HttpGet("/CurvePoint/{id}")]
+        //GET: /curvePoint/id
+        [HttpGet("/curvePoint/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<CurvePointDTO>>> GetCurvePointById(int id)
         {
             return await _context.CurvePoint
-                .Where(x => x.CurveId == id)
+                .Where(c => c.Id == id)
                 .Select(x => CurvePointToDTO(x))
                 .ToListAsync();
         }
 
-
-        // POST: /CurvePoint
+        // POST: /curvePoint
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -83,7 +82,7 @@ namespace Dot.Net.WebApi.Controllers
                 CurvePointToDTO(curvePoint));
         }
 
-        //PUT /CurvePoint/id
+        //PUT: /curvePoint/id
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -114,7 +113,7 @@ namespace Dot.Net.WebApi.Controllers
             return NoContent();
         }
 
-        //DELETE /CurvePoint/id
+        //DELETE: /curvePoint/id
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -127,6 +126,7 @@ namespace Dot.Net.WebApi.Controllers
             }
             _context.CurvePoint.Remove(curvePoint);
             await _context.SaveChangesAsync();
+
             return curvePoint;
         }
 
@@ -161,7 +161,7 @@ namespace Dot.Net.WebApi.Controllers
 
         private bool CurvePointExists(int id)
         {
-            return _context.CurvePoint.Any(e => e.Id == id);
+            return _context.CurvePoint.Any(c => c.Id == id);
         }
 
         private static CurvePointDTO CurvePointToDTO(CurvePoint curvePoint) =>
