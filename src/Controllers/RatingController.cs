@@ -40,7 +40,15 @@ namespace Dot.Net.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public ActionResult<IEnumerable<Rating>> GetRatingById(int id)
         {
-            return _context.Rating.Where(x => x.Id == id).ToList();
+            if(!RatingExists(id))
+            {
+                return BadRequest("Wrong id. This item does not exist !");
+            }
+            else
+            {
+                return _context.Rating.Where(x => x.Id == id).ToList();
+            }
+            
         }
 
         //POST /Rating

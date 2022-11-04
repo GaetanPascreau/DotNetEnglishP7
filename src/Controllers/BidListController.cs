@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Dot.Net.WebApi.Data;
 using Dot.Net.WebApi.Domain;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,11 +22,13 @@ namespace Dot.Net.WebApi.Controllers
     {
         private readonly ILogger<BidListController> _logger;
         private readonly LocalDbContext _context;
+        private IValidator<BidList> _validator;
 
-        public BidListController(ILogger<BidListController> logger, LocalDbContext context)
+        public BidListController(ILogger<BidListController> logger, LocalDbContext context, IValidator<BidList> validator)
         {
             _logger = logger;
             _context = context;
+            _validator = validator;
         }
 
         //[HttpGet("/")]
@@ -37,6 +43,19 @@ namespace Dot.Net.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<CurvePointtDTO>>> GetBidList()
         {
+            _logger.LogInformation("Here is the control log");
+            Console.WriteLine(_logger);
+
+            using (StreamWriter w = System.IO.File.AppendText("log.txt"))
+            {
+                Log("User requested the BidList", w);
+            }
+
+            using (StreamReader r = System.IO.File.OpenText("log.txt"))
+            {
+                DumpLog(r);
+            }
+
             return await _context.BidList
                 .Select(x => BidListToDTO(x))
                 .ToListAsync();
@@ -48,10 +67,22 @@ namespace Dot.Net.WebApi.Controllers
        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<CurvePointtDTO>>> GetBidListById(int id)
         {
-            return await _context.BidList
-                .Where(x => x.BidListId == id)
-                .Select(x => BidListToDTO(x))
-                .ToListAsync();
+            if(!BidListExists(id))
+            {
+                return BadRequest("Wrong id. This item does not exist !");
+            }
+            else
+            {
+                return await _context.BidList
+                    .Where(x => x.BidListId == id)
+                    .Select(x => BidListToDTO(x))
+                    .ToListAsync();
+            }  
+        }
+
+        public ActionResult CreateBidList()
+        {
+            return View();
         }
 
         // POST: /BidList
@@ -61,10 +92,10 @@ namespace Dot.Net.WebApi.Controllers
         public async Task<ActionResult<CurvePointtDTO>> CreateBidList(CurvePointtDTO bidListDTO)
         {
             // ADD FIELDS VALIDATION
-            //if (bidListDTO.BidQuantity.GetType() != Decimal)
-            //{
-            //    return BadRequest();
-            //}
+            if (!bidListDTO.BidQuantity.GetType().Equals(typeof(Decimal)))
+            {
+                return BadRequest("Bid Quantity should be a number");
+            }
 
             var bidList = new BidList
             {
@@ -76,8 +107,19 @@ namespace Dot.Net.WebApi.Controllers
                 RevisionDate = DateTime.Now
             };
 
+            ValidationResult result = await _validator.ValidateAsync(bidListDTO);
+
+            if(!result.IsValid)
+            {
+                // Copy the validation results into ModelState.
+                // ASP.NET uses the ModelState collection to populate error messages in the View.
+                result.AddToModelState(this.ModelState, null);
+                return View("CreateBidList", bidList);
+            }
+
             _context.BidList.Add(bidList);
             await _context.SaveChangesAsync();
+            TempData["notice"] = "BidList successfully created";
             
             return CreatedAtAction(
                 nameof(GetBidList),
@@ -181,5 +223,23 @@ namespace Dot.Net.WebApi.Controllers
             CreationDate = bidList.CreationDate,
             RevisionDate = bidList.RevisionDate
         };
+
+        public static void Log(string logMessage, TextWriter w)
+        {
+            w.Write("\r\nLog Entry : ");
+            w.WriteLine($"{DateTime.Now.ToLongTimeString()} {DateTime.Now.ToLongDateString()}");
+            w.WriteLine("  :");
+            w.WriteLine($"  :{logMessage}");
+            w.WriteLine("-------------------------------");
+        }
+
+        public static void DumpLog(StreamReader r)
+        {
+            string line;
+            while ((line = r.ReadLine()) != null)
+            {
+                Console.WriteLine(line);
+            }
+        }
     }
 }

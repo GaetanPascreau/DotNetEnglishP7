@@ -17,13 +17,15 @@ namespace Dot.Net.WebApi.Controllers
     [Route("User")]
     public class UserController : Controller
     {
-        private UserRepository _userRepository;
+        //private UserRepository _userRepository;
         private readonly ILogger<UserController> _logger;
         private readonly LocalDbContext _context;
 
-        public UserController(UserRepository userRepository)
+        public UserController(ILogger<UserController> logger, LocalDbContext context)
         {
-            _userRepository = userRepository;
+            //_userRepository = userRepository;
+            _logger = logger;
+            _context = context;
         }
 
 
@@ -38,16 +40,23 @@ namespace Dot.Net.WebApi.Controllers
                 .ToListAsync();
         }
 
-        //GET: />User/id
+        //GET: /User/id
         [HttpGet("/User/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<UserDTO>>> GetUserById(int id)
         {
-            return await _context.Users
-                .Where(u => u.Id == id)
-                .Select(x => UserToDTO(x))
-                .ToListAsync();
+            if(!UserExists(id))
+            {
+                return BadRequest("Wrong id. This user does not exist !");
+            }
+            else
+            {
+                return await _context.Users
+                     .Where(u => u.Id == id)
+                     .Select(x => UserToDTO(x))
+                     .ToListAsync();
+            }         
         }
 
         //POST: /User
@@ -67,7 +76,7 @@ namespace Dot.Net.WebApi.Controllers
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(
-                nameof(user),
+                nameof(GetUser),
                 new { Id = user.Id },
                UserToDTO(user));
         }
@@ -123,48 +132,48 @@ namespace Dot.Net.WebApi.Controllers
 
 
         // Original code
-        [HttpGet("/user/list")]
-        public IActionResult Home()
-        {
-            return View(_userRepository.FindAll());
-        }
+        //[HttpGet("/user/list")]
+        //public IActionResult Home()
+        //{
+        //    return View(_userRepository.FindAll());
+        //}
 
-        [HttpGet("/user/add")]
-        public IActionResult AddUser([FromBody]User user)
-        {
-            return View("user/add");
-        }
+        //[HttpGet("/user/add")]
+        //public IActionResult AddUser([FromBody]User user)
+        //{
+        //    return View("user/add");
+        //}
 
-        [HttpGet("/user/validate")]
-        public IActionResult Validate([FromBody]User user)
-        {
-            if (!ModelState.IsValid)
-            {
-                return Redirect("user/add");
-            }
+        //[HttpGet("/user/validate")]
+        //public IActionResult Validate([FromBody]User user)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return Redirect("user/add");
+        //    }
            
-           _userRepository.Add(user);
+        //   _userRepository.Add(user);
            
-            return Redirect("user/list");
-        }
+        //    return Redirect("user/list");
+        //}
 
-        [HttpGet("/user/update/{id}")]
-        public IActionResult ShowUpdateForm(int id)
-        {
-            User user = _userRepository.FindById(id);
+        //[HttpGet("/user/update/{id}")]
+        //public IActionResult ShowUpdateForm(int id)
+        //{
+        //    User user = _userRepository.FindById(id);
             
-            if (user == null)
-                throw new ArgumentException("Invalid user Id:" + id);
+        //    if (user == null)
+        //        throw new ArgumentException("Invalid user Id:" + id);
             
-            return View("user/update");
-        }
+        //    return View("user/update");
+        //}
 
-        [HttpPost("/user/update/{id}")]
-        public IActionResult updateUser(int id, [FromBody] User user)
-        {
-            // TODO: check required fields, if valid call service to update Trade and return Trade list
-            return Redirect("/trade/list");
-        }
+        //[HttpPost("/user/update/{id}")]
+        //public IActionResult updateUser(int id, [FromBody] User user)
+        //{
+        //    // TODO: check required fields, if valid call service to update Trade and return Trade list
+        //    return Redirect("/trade/list");
+        //}
 
         //[HttpDelete("/user/{id}")]
         //public IActionResult DeleteUser(int id)

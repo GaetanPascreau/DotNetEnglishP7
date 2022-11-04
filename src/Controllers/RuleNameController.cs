@@ -43,10 +43,17 @@ namespace Dot.Net.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<RuleNameDTO>>> GetRuleNameById(int id)
         {
-            return await _context.RuleName
-                .Where(r => r.Id == id)
-                .Select(x => RuleNameToDTO(x))
-                .ToListAsync();
+            if(!RuleNameExists(id))
+            {
+                return BadRequest("Wrong id.This item does not exist !");
+            }
+            else
+            {
+                return await _context.RuleName
+                    .Where(r => r.Id == id)
+                    .Select(x => RuleNameToDTO(x))
+                    .ToListAsync();
+            }  
         }
 
         //POST: /RuleName

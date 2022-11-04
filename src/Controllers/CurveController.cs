@@ -13,7 +13,7 @@ using WebApi.Domain;
 namespace Dot.Net.WebApi.Controllers
 {
     [ApiController]
-    [Route("CurvePoint")]
+    [Route("curvePoint")]
     public class CurveController : Controller
     {
         // TODO: Inject Curve Point service
@@ -26,12 +26,6 @@ namespace Dot.Net.WebApi.Controllers
             _context = context;
         }
 
-        //[HttpGet("/curvePoint/list")]
-        //public IActionResult Home()
-        //{
-        //    return View("curvePoint/list");
-        //}
-
         // GET: /curvePoint/list
         [HttpGet("/curvePoint/list")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -39,6 +33,7 @@ namespace Dot.Net.WebApi.Controllers
         public async Task<ActionResult<IEnumerable<CurvePointDTO>>> GetCurvePoint()
         {
             _logger.LogInformation("User requested the list of curvePoints");
+            Console.WriteLine(_logger);
             return await _context.CurvePoint
                 .Select(x => CurvePointToDTO(x))
                 .ToListAsync();
@@ -50,10 +45,17 @@ namespace Dot.Net.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<CurvePointDTO>>> GetCurvePointById(int id)
         {
-            return await _context.CurvePoint
-                .Where(c => c.Id == id)
-                .Select(x => CurvePointToDTO(x))
-                .ToListAsync();
+            if(!CurvePointExists(id))
+            {
+                return (BadRequest("Wrong id. This item does not exists !"));
+            }
+            else
+            {
+                return await _context.CurvePoint
+                    .Where(c => c.Id == id)
+                    .Select(x => CurvePointToDTO(x))
+                    .ToListAsync();
+            } 
         }
 
         // POST: /curvePoint
@@ -130,6 +132,13 @@ namespace Dot.Net.WebApi.Controllers
             return curvePoint;
         }
 
+        //ORIGINAL CODE below :
+
+        //[HttpGet("/curvePoint/list")]
+        //public IActionResult Home()
+        //{
+        //    return View("curvePoint/list");
+        //}
 
         [HttpGet("/curvePoint/add")]
         public IActionResult AddCurvePoint([FromBody]CurvePoint curvePoint)

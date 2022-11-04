@@ -19,6 +19,12 @@ namespace Dot.Net.WebApi.Controllers
         public readonly ILogger<RuleNameController> _logger;
         public readonly LocalDbContext _context;
 
+        public TradeController(ILogger<RuleNameController> logger, LocalDbContext context)
+        {
+            _logger = logger;
+            _context = context;
+        }
+
         // TODO: Inject Trade service
 
         //GET: /Trade
@@ -38,10 +44,17 @@ namespace Dot.Net.WebApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<TradeDTO>>> GetTradeById(int id)
         {
-            return await _context.Trade
-                .Where(t => t.TradeId == id)
-                .Select(x => TradeToDTO(x))
-                .ToListAsync();
+            if(!TradeExists(id))
+            {
+                return BadRequest("Wrong id.This item does not exists !");
+            }
+            else
+            {
+                return await _context.Trade
+                    .Where(t => t.TradeId == id)
+                    .Select(x => TradeToDTO(x))
+                    .ToListAsync();
+            }       
         }
 
         //POST: /Trade
@@ -54,20 +67,20 @@ namespace Dot.Net.WebApi.Controllers
             {
                 Account = tradeDTO.Account,
                 Type = tradeDTO.Type,
-                BuyQuantity = !string.IsNullOrWhiteSpace((tradeDTO.BuyQuantity).ToString()) ? (Decimal?)Decimal.Parse((tradeDTO.BuyQuantity).ToString()) : null,
-                SellQuantity = !string.IsNullOrWhiteSpace((tradeDTO.SellQuantity).ToString()) ? (Decimal?)Decimal.Parse((tradeDTO.SellQuantity).ToString()) : null,
-                BuyPrice = !string.IsNullOrWhiteSpace((tradeDTO.BuyPrice).ToString()) ? (Decimal?)Decimal.Parse((tradeDTO.BuyPrice).ToString()) : null,
-                SellPrice = !string.IsNullOrWhiteSpace((tradeDTO.SellPrice).ToString()) ? (Decimal?)Decimal.Parse((tradeDTO.BuyQuantity).ToString()) : null,
+                BuyQuantity = tradeDTO.BuyQuantity, 
+                SellQuantity = tradeDTO.SellQuantity, 
+                BuyPrice = tradeDTO.BuyPrice, 
+                SellPrice = tradeDTO.SellPrice, 
                 TradeDate = DateTime.Now,
                 CreationDate = DateTime.Now,
                 RevisionDate = DateTime.Now
             };
 
-            _context.Add(trade);
+            _context.Trade.Add(trade);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(
-                nameof(trade),
+                nameof(GetTrade),
                 new { TradeId = trade.TradeId },
                 TradeToDTO(trade));
         }
@@ -76,9 +89,9 @@ namespace Dot.Net.WebApi.Controllers
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> UpdateTrade(int TradeId, Trade trade)
+        public async Task<IActionResult> UpdateTrade(int id, Trade trade)
         {
-            if (TradeId != trade.TradeId)
+            if (id != trade.TradeId)
             {
                 return BadRequest();
             }
@@ -91,7 +104,7 @@ namespace Dot.Net.WebApi.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!TradeExists(TradeId))
+                if (!TradeExists(id))
                 {
                     return NotFound();
                 }
@@ -107,9 +120,9 @@ namespace Dot.Net.WebApi.Controllers
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<Trade>> DeleteTrade(int TradeId)
+        public async Task<ActionResult<Trade>> DeleteTrade(int id)
         {
-            var trade = await _context.Trade.FindAsync(TradeId);
+            var trade = await _context.Trade.FindAsync(id);
             if (trade == null)
             {
                 return NotFound();
@@ -117,7 +130,6 @@ namespace Dot.Net.WebApi.Controllers
 
             _context.Trade.Remove(trade);
             await _context.SaveChangesAsync();
-
             return trade;
         }
 
@@ -177,10 +189,10 @@ namespace Dot.Net.WebApi.Controllers
                 TradeId = trade.TradeId,
                 Account = trade.Account,
                 Type = trade.Type,
-                BuyQuantity = !string.IsNullOrWhiteSpace((trade.BuyQuantity).ToString()) ? (Decimal?)Decimal.Parse((trade.BuyQuantity).ToString()) : null,
-                SellQuantity = !string.IsNullOrWhiteSpace((trade.SellQuantity).ToString()) ? (Decimal?)Decimal.Parse((trade.SellQuantity).ToString()) : null,
-                BuyPrice = !string.IsNullOrWhiteSpace((trade.BuyPrice).ToString()) ? (Decimal?)Decimal.Parse((trade.BuyPrice).ToString()) : null,
-                SellPrice = !string.IsNullOrWhiteSpace((trade.SellPrice).ToString()) ? (Decimal?)Decimal.Parse((trade.BuyQuantity).ToString()) : null,
+                BuyQuantity = trade.BuyQuantity, 
+                SellQuantity = trade.SellQuantity, 
+                BuyPrice = trade.BuyPrice,
+                SellPrice = trade.SellPrice,
                 TradeDate = trade.TradeDate,
                 CreationDate = trade.CreationDate,
                 RevisionDate = trade.RevisionDate
